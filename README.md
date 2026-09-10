@@ -2,8 +2,7 @@
 
 ![Stars](https://img.shields.io/github/stars/keyitdev/sddm-astronaut-theme?color=dd864a&labelColor=1b1b25&style=for-the-badge)
 ![Forks](https://img.shields.io/github/forks/keyitdev/sddm-astronaut-theme?color=bf616a&labelColor=1b1b25&style=for-the-badge)
-[![Ko-fi](https://img.shields.io/badge/support_me_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
-[![Ko-fi](https://img.shields.io/badge/support_this_fork_on_ko--fi-FF5E5B?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/thealtd)
+[![Ko-fi](https://img.shields.io/badge/support_Keyitdev_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
 
 [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme) is a series of themes for the [SDDM](https://github.com/sddm/sddm/) display manager made by **[Keyitdev](https://github.com/Keyitdev)**.
 
@@ -163,7 +162,7 @@ You can support the original creator by dropping a **star** on **[github](https:
 
 If you enjoyed it and would like to show your appreciation, you can make a **[donation](https://ko-fi.com/keyitdev)** using **[kofi](https://ko-fi.com/keyitdev)**.
 
-[![Ko-fi](https://img.shields.io/badge/support_me_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
+[![Ko-fi](https://img.shields.io/badge/support_Keyitdev_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
 
 If you like this fork, you can also support the maintainer on **[Ko-fi](https://ko-fi.com/thealtd)**.
 

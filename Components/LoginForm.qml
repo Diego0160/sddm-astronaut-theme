@@ -39,10 +39,11 @@ ColumnLayout {
         Layout.preferredHeight: root.height / 5
         Layout.maximumHeight: root.height / 5
         Layout.leftMargin: p != "0" ? a == "left" ? -p : a == "right" ? p : 0 : 0
-
+        
         exposedSession: input.exposeSession
+        cycleBackgroundCallback: root.cycleBackground
     }
-
+    
     SessionButton {
         id: sessionSelect
 

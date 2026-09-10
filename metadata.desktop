@@ -1,12 +1,12 @@
 [SddmGreeterTheme]
 Name=sddm-astronaut-theme
-Description=sddm-astronaut-theme
-Author=keyitdev
-Website=https://github.com/Keyitdev/sddm-astronaut-theme
+Description=sddm-astronaut-theme (modified fork: multimedia rotation + wallpaper button)
+Author=keyitdev (modified by Diego0160)
+Website=https://github.com/Diego0160/sddm-astronaut-theme
 License=GPL-3.0-or-later
 Type=sddm-theme
-Version=1.4
-ConfigFile=Themes/astronaut.conf
+Version=1.3
+ConfigFile=Themes/hyprland_animated.conf
 Screenshot=Previews/astronaut.png
 MainScript=Main.qml
 TranslationsDirectory=translations

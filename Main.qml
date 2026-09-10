@@ -18,6 +18,17 @@ Pane {
     width: config.ScreenWidth || Screen.ScreenWidth
     padding: config.ScreenPadding
 
+    Component.onCompleted: {
+        var bgList = config.Backgrounds
+        if (bgList && bgList !== "") {
+            var arr = bgList.split(";").map(function(s) { return s.trim(); }).filter(function(s) { return s !== ""; })
+            if (arr.length > 0)
+                _availableBgs = arr
+        }
+        if (_availableBgs.length === 0)
+            _availableBgs = [config.Background]
+    }
+
     LayoutMirroring.enabled: config.RightToLeftLayout == "true" ? true : Qt.application.layoutDirection === Qt.RightToLeft
     LayoutMirroring.childrenInherit: true
 
@@ -28,8 +39,34 @@ Pane {
 
     font.family: config.Font
     font.pointSize: config.FontSize !== "" ? config.FontSize : parseInt(height / 80) || 13
-
+    
     focus: true
+
+    property var _availableBgs: []
+    property string _currentBg: ""
+
+    function cycleBackground() {
+        if (_availableBgs.length === 0) return
+        var newBg = _availableBgs[Math.floor(Math.random() * _availableBgs.length)]
+        if (newBg === _currentBg && _availableBgs.length > 1) {
+            while (newBg === _currentBg)
+                newBg = _availableBgs[Math.floor(Math.random() * _availableBgs.length)]
+        }
+        _currentBg = newBg
+        var ft = newBg.substring(newBg.lastIndexOf(".") + 1).toLowerCase()
+        if (["avi", "mp4", "mov", "mkv", "m4v", "webm"].includes(ft)) {
+            player.stop()
+            backgroundPlaceholderImage.visible = true
+            backgroundImage.source = ""
+            player.source = Qt.resolvedUrl(newBg)
+            player.play()
+        } else {
+            player.stop()
+            player.source = ""
+            backgroundPlaceholderImage.visible = false
+            backgroundImage.source = newBg
+        }
+    }
 
     property bool leftleft: config.HaveFormBackground == "true" &&
                             config.PartialBlur == "false" &&
@@ -57,7 +94,7 @@ Pane {
         height: parent.height
         width: parent.width
         anchors.fill: parent
-
+        
         Rectangle {
             id: tintLayer
 
@@ -103,7 +140,7 @@ Pane {
             anchors.horizontalCenter: config.VirtualKeyboardPosition == "center" ? parent.horizontalCenter : undefined;
             anchors.right: config.VirtualKeyboardPosition == "right" ? parent.right : undefined;
             z: 1
-
+            
             state: "hidden"
             property bool keyboardActive: item ? item.active : false
 
@@ -179,7 +216,7 @@ Pane {
                 }
             ]
         }
-
+        
         Image {
             id: backgroundPlaceholderImage
 
@@ -190,10 +227,10 @@ Pane {
 
         AnimatedImage {
             id: backgroundImage
-
+            
             MediaPlayer {
                 id: player
-
+                
                 videoOutput: videoOutput
                 autoPlay: true
                 playbackRate: config.BackgroundSpeed == "" ? 1.0 : config.BackgroundSpeed
@@ -206,7 +243,7 @@ Pane {
 
             VideoOutput {
                 id: videoOutput
-
+                
                 fillMode: config.CropBackground == "true" ? VideoOutput.PreserveAspectCrop : VideoOutput.PreserveAspectFit
                 anchors.fill: parent
             }
@@ -234,18 +271,7 @@ Pane {
             clip: true
             mipmap: true
 
-            Component.onCompleted:{
-                var fileType = config.Background.substring(config.Background.lastIndexOf(".") + 1)
-                const videoFileTypes = ["avi", "mp4", "mov", "mkv", "m4v", "webm"];
-                if (videoFileTypes.includes(fileType)) {
-                    backgroundPlaceholderImage.visible = true;
-                    player.source = Qt.resolvedUrl(config.Background)
-                    player.play();
-                }
-                else{
-                    backgroundImage.source = config.background || config.Background
-                }
-            }
+            Component.onCompleted: root.cycleBackground()
         }
 
         MouseArea {
@@ -267,14 +293,14 @@ Pane {
 
         MultiEffect {
             id: blur
-
+            
             height: parent.height
 
             // width: config.FullBlur == "true" ? parent.width : form.width
             // anchors.centerIn: config.FullBlur == "true" ? parent : form
 
             // This solves problem when FullBlur and HaveFormBackground is set to true but PartialBlur is false and FormPosition isn't center.
-            width: (config.FullBlur == "true" && config.PartialBlur == "false" && config.FormPosition != "center" ) ? parent.width - formBackground.width : config.FullBlur == "true" ? parent.width : form.width
+            width: (config.FullBlur == "true" && config.PartialBlur == "false" && config.FormPosition != "center" ) ? parent.width - formBackground.width : config.FullBlur == "true" ? parent.width : form.width 
             anchors.centerIn: config.FullBlur == "true" ? backgroundImage : form
 
             source: config.FullBlur == "true" ? backgroundImage : blurMask

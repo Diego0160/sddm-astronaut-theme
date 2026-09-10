@@ -3,8 +3,11 @@
 ![Stars](https://img.shields.io/github/stars/keyitdev/sddm-astronaut-theme?color=dd864a&labelColor=1b1b25&style=for-the-badge)
 ![Forks](https://img.shields.io/github/forks/keyitdev/sddm-astronaut-theme?color=bf616a&labelColor=1b1b25&style=for-the-badge)
 [![Ko-fi](https://img.shields.io/badge/support_me_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
+[![Ko-fi](https://img.shields.io/badge/support_this_fork_on_ko--fi-FF5E5B?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/thealtd)
 
 [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme) is a series of themes for the [SDDM](https://github.com/sddm/sddm/) display manager made by **[Keyitdev](https://github.com/Keyitdev)**.
+
+> **This is a modified fork that adds a multimedia wallpaper rotation ("roulette") mode, a wallpaper cycling button, and curated per-theme rotation lists.** All added wallpapers are free-licensed (Pexels License / CC0) — see [Media licenses](#media-licenses).
 
 It's written using the latest version of Qt, which is **Qt6**. Its key features include **virtual keyboard support** and an **installation script**. This theme also support **animated wallpapers**. You can easily change its appearance by choosing another of the ten pre-made themes or creating your own. Each of these themes was created by modifying just one file - **[config](./Themes/astronaut.conf)**.
 
@@ -51,51 +54,12 @@ https://github.com/user-attachments/assets/181d48c2-f152-45f5-b568-21145be180f6
 ### Automatic Installation
 
 ```sh
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/keyitdev/sddm-astronaut-theme/master/setup.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Diego0160/sddm-astronaut-theme/main/setup.sh)"
 ```
 > Works on distributions using pacman, xbps-install, dnf, zypper.   
 > Remember to always read the scripts you run from the internet.
 
-### NixOS Installation
-
-#### Using System Configuration with Custom Overrides
-
-While not officially packaged by the upstream maintainers, there is a [community-maintained package](https://search.nixos.org/packages?channel=unstable&query=sddm-astronaut#show=sddm-astronaut) maintained by @DaniD3v, @uxodb, and @qweered. You can install and customize the theme by creating an override of the package in your `configuration.nix`:
-
-```nix
-let
-  sddm-astronaut = (pkgs.sddm-astronaut.override {
-    embeddedTheme = "japanese_aesthetic";  # or any other theme
-    themeConfig = {
-      # Customize colors and settings
-      HeaderTextColor = "#d5c4a1";
-      Background = "Backgrounds/your-custom-background.png";
-      # ... other theme configuration options
-    };
-  }).overrideAttrs (oldAttrs: {
-    # Optional: Inject custom background image
-    installPhase = oldAttrs.installPhase + ''
-      chmod u+w $out/share/sddm/themes/sddm-astronaut-theme/Backgrounds/
-      cp ${./relative/path/to/your-custom-background.png} \
-        $out/share/sddm/themes/sddm-astronaut-theme/Backgrounds/your-custom-background.png
-    '';
-  });
-in
-{
-  environment.systemPackages = [ sddm-astronaut ];
-  
-  services.displayManager.sddm = {
-    enable = true;
-    package = pkgs.kdePackages.sddm;
-    extraPackages = with pkgs; [
-      kdePackages.qtmultimedia # Required for video backgrounds/audio
-    ];
-    theme = "sddm-astronaut-theme";
-  };
-}
-```
-
-## Manual Installation
+### Manual Installation
 
 1. Install **dependencies**
 
@@ -108,12 +72,12 @@ sddm qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg     # Arch
 sddm qt6-svg qt6-virtualkeyboard qt6-multimedia            # Void
 sddm qt6-qtsvg qt6-qtvirtualkeyboard qt6-qtmultimedia      # Fedora
 sddm-qt6 libQt6Svg6 qt6-virtualkeyboard qt6-virtualkeyboard-imports qt6-multimedia qt6-multimedia-imports        # OpenSUSE
-sddm qt6-svg-dev qml6-module-qtquick-virtualkeyboard qt6-multimedia-dev qml6-module-qtquick-controls qml6-module-qtquick-effects libxcb-cursor0 # Debian trixie (13.5)
+sddm libqt6svg6 qt6-virtualkeyboard-plugin libqt6multimedia6 qml6-module-qtquick-controls qml6-module-qtquick-effects libxcb-cursor0 # Debian Unstable
 ```
 
 2. Clone this repository
 ```sh
-sudo git clone -b master --depth 1 https://github.com/keyitdev/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
+sudo git clone -b main --depth 1 https://github.com/Diego0160/sddm-astronaut-theme.git /usr/share/sddm/themes/sddm-astronaut-theme
 ```
 3. Copy fonts to `/usr/share/fonts/`
 ```sh
@@ -148,6 +112,35 @@ sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/sddm-astronaut-theme
 ```
 > Note that depending on the system configuration, the preview may differ slightly from the actual login screen.
 
+## Modifications in this fork
+
+- **Multimedia wallpaper rotation ("roulette")**: any theme config can define a `Backgrounds` list (semicolon-separated). A random wallpaper is picked on each session, and the **Wallpaper button** (third system button) cycles through them on demand. Supports images, GIFs and videos (mp4/webm/mov).
+- **Curated per-theme rotations**: every theme keeps its original background first, then rotates through compatible free wallpapers.
+- Removed the duplicate `hyprland_kath` config (superseded by `hyprland_animated`).
+
+Example (`Themes/hyprland_animated.conf`):
+```ini
+Backgrounds="Backgrounds/sakura-street.mp4;Backgrounds/hyprland_kath.mp4;Backgrounds/train-window.mp4;Backgrounds/starry-night.mp4;Backgrounds/moon.mp4;Backgrounds/neon-sunset.mp4;Backgrounds/rain-window.mp4;Backgrounds/forest-dusk.gif;Backgrounds/neon-grid.mp4"
+```
+
+## Media licenses
+
+All wallpapers added in this fork are freely licensed:
+
+| File | Source | License |
+|---|---|---|
+| `sakura-street.mp4` | [Pexels 31424703](https://www.pexels.com/video/cherry-blossoms-in-ueno-park-during-springtime-31424703/) | Pexels License |
+| `starry-night.mp4` | [Pexels 35115646](https://www.pexels.com/video/starry-night-sky-with-vibrant-celestial-bodies-35115646/) | Pexels License |
+| `train-window.mp4` | [Pexels 4640062](https://www.pexels.com/video/raindrops-sliding-on-a-train-window-4640062/) | Pexels License |
+| `rain-window.mp4` | [Pexels 33555567](https://www.pexels.com/video/peaceful-rainy-european-town-window-view-33555567/) | Pexels License |
+| `moon.mp4` | [Pexels 37831634](https://www.pexels.com/video/serene-night-sky-with-waxing-moon-37831634/) | Pexels License |
+| `neon-sunset.mp4` | [Pexels 35726711](https://www.pexels.com/video/neon-futuristic-landscape-with-digital-sunset-35726711/) | Pexels License |
+| `neon-grid.mp4` | [Pexels 35726349](https://www.pexels.com/video/vibrant-neon-landscape-with-futuristic-grid-35726349/) | Pexels License |
+| `forest-dusk.gif` | [OpenGameArt — Animated Forest at dusk](https://opengameart.org/content/animated-forest-at-dusk) | CC0 |
+| `Arch.jpg` | Arch Linux wallpaper (placeholder) | — |
+
+The original theme wallpapers (`astronaut.png`, `black_hole.png`, `cyberpunk.png`, `hyprland_kath.*`, `jake_the_dog.*`, `japanese_aesthetic.png`, `pixel_sakura.*`, `post-apocalyptic_hacker.png`, `purple_leaves.png`) are part of the upstream GPL-3.0 repository.
+
 ## Sources
 
 Initially the theme was independed fork of [MarianArlt's theme](https://github.com/MarianArlt/sddm-sugar-dark) but now the project has come a long way and started to significantly deviate from the original.
@@ -166,11 +159,15 @@ I also redesigned many of them, but here are links to some of the orginal artist
   
 ## Supporting project
 
-You can support me simply by dropping a **star** on **[github](https://github.com/Keyitdev/sddm-astronaut-theme)** or giving a **subscription** on **[YouTube](http://www.youtube.com/channel/UCVoGVyAP2sHPQyegwBMJKyQ?sub_confirmation=1)**.
+You can support the original creator by dropping a **star** on **[github](https://github.com/Keyitdev/sddm-astronaut-theme)** or giving a **subscription** on **[YouTube](http://www.youtube.com/channel/UCVoGVyAP2sHPQyegwBMJKyQ?sub_confirmation=1)**.
 
 If you enjoyed it and would like to show your appreciation, you can make a **[donation](https://ko-fi.com/keyitdev)** using **[kofi](https://ko-fi.com/keyitdev)**.
 
 [![Ko-fi](https://img.shields.io/badge/support_me_on_ko--fi-F16061?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/keyitdev)
+
+If you like this fork, you can also support the maintainer on **[Ko-fi](https://ko-fi.com/thealtd)**.
+
+[![Ko-fi](https://img.shields.io/badge/support_this_fork_on_ko--fi-FF5E5B?style=for-the-badge&logo=kofi&logoColor=f5f5f5)](https://ko-fi.com/thealtd)
 
 Distributed under the **[GPLv3+](https://www.gnu.org/licenses/gpl-3.0.html) License**.    
 Copyright (C) 2022-2025 Keyitdev.

@@ -13,15 +13,15 @@ RowLayout {
 
     property var shutdown: ["Shutdown", config.TranslateShutdown || textConstants.shutdown, sddm.canPowerOff]
     property var reboot: ["Reboot", config.TranslateReboot || textConstants.reboot, sddm.canReboot]
-    property var suspend: ["Suspend", config.TranslateSuspend || textConstants.suspend, sddm.canSuspend]
-    property var hibernate: ["Hibernate", config.TranslateHibernate || textConstants.hibernate, sddm.canHibernate]
+    property var wallpaper: ["Wallpaper", "Wallpaper", true]
 
+    property var cycleBackgroundCallback: null
     property ComboBox exposedSession
 
     Repeater {
         id: systemButtons
-
-        model: [shutdown, reboot, suspend, hibernate]
+        
+        model: [shutdown, reboot, wallpaper]
 
         RoundButton {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -37,7 +37,7 @@ RowLayout {
             display: AbstractButton.TextUnderIcon
             visible: config.HideSystemButtons != "true" && (config.BypassSystemButtonsChecks == "true" ? 1 : modelData[2])
             hoverEnabled: true
-
+            
             background: Rectangle {
                 height: 2
                 width: parent.width
@@ -48,10 +48,15 @@ RowLayout {
             Keys.onReturnPressed: clicked()
             onClicked: {
                 parent.forceActiveFocus()
-                index == 0 ? sddm.powerOff() : index == 1 ? sddm.reboot() : index == 2 ? sddm.suspend() : sddm.hibernate()
+                if (index == 2 && cycleBackgroundCallback)
+                    cycleBackgroundCallback()
+                else if (index == 1)
+                    sddm.reboot()
+                else if (index == 0)
+                    sddm.powerOff()
             }
             KeyNavigation.left: index > 0 ? parent.children[index-1] : null
-
+            
             states: [
                 State {
                     name: "pressed"

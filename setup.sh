@@ -1,14 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 ## SDDM Astronaut Theme Installer
 ## Based on original by Keyitdev https://github.com/Keyitdev/sddm-astronaut-theme
 ## Copyright (C) 2022-2025 Keyitdev
+## Modified fork by Diego0160: multimedia rotation (Backgrounds), wallpaper button, curated per-theme rotations.
+## Fork repo: https://github.com/Diego0160/sddm-astronaut-theme
 
 # Script works in Arch, Fedora, Ubuntu. Didn't tried in Void and openSUSE
 
 set -euo pipefail
 
-readonly THEME_REPO="https://github.com/Keyitdev/sddm-astronaut-theme.git"
+readonly THEME_REPO="https://github.com/Diego0160/sddm-astronaut-theme.git"
 readonly THEME_NAME="sddm-astronaut-theme"
 readonly THEMES_DIR="/usr/share/sddm/themes"
 readonly PATH_TO_GIT_CLONE="$HOME/$THEME_NAME"
@@ -16,7 +18,7 @@ readonly METADATA="$THEMES_DIR/$THEME_NAME/metadata.desktop"
 readonly DATE=$(date +%s)
 
 readonly -a THEMES=(
-    "astronaut" "black_hole" "cyberpunk" "hyprland_kath" "jake_the_dog"
+    "astronaut" "black_hole" "cyberpunk" "hyprland_animated" "hyprland_kath" "jake_the_dog"
     "japanese_aesthetic" "pixel_sakura" "pixel_sakura_static"
     "post-apocalyptic_hacker" "purple_leaves"
 )
@@ -111,7 +113,7 @@ install_deps() {
         xbps-install) sudo xbps-install -y sddm qt6-svg qt6-virtualkeyboard qt6-multimedia ;;
         dnf) sudo dnf install -y sddm qt6-qtsvg qt6-qtvirtualkeyboard qt6-qtmultimedia ;;
         zypper) sudo zypper install -y sddm libQt6Svg6 qt6-virtualkeyboard qt6-multimedia ;;
-        apt) sudo apt update && sudo apt install -y sddm qt6-svg-dev qml6-module-qtquick-virtualkeyboard qt6-multimedia-dev qml6-module-qtquick-controls qml6-module-qtquick-effects libxcb-cursor0 ;;
+        apt) sudo apt update && sudo apt install -y sddm qt6-svg-dev qml6-module-qtquick-virtualkeyboard qt6-multimedia-dev ;;
         *) error "Unsupported package manager"; return 1 ;;
     esac
     info "Dependencies installed"
@@ -153,134 +155,49 @@ install_theme() {
 # Select theme variant
 select_theme() {
     [[ ! -f "$METADATA" ]] && { error "Install theme first"; return 1; }
-
+    
     local theme=$(choose "${THEMES[@]}" || echo "astronaut")
     sudo sed -i "s|^ConfigFile=.*|ConfigFile=Themes/${theme}.conf|" "$METADATA"
     info "Selected theme: $theme"
 }
 
-_disable_dm_systemd() {
-    sudo systemctl disable display-manager.service 2>/dev/null || true
-}
-_disable_dm_openrc() {
-    for dm in gdm lightdm lxdm emptty greetd; do
-        sudo rc-update del "$dm" default 2>/dev/null || true
-    done
-}
-_disable_dm_runit() {
-    local runsvdir
-    runsvdir=$(_runit_runsvdir)
-    for dm in gdm lightdm lxdm emptty greetd; do
-        sudo rm -f "$runsvdir/$dm" 2>/dev/null || true
-    done
-}
-_disable_dm_dinit() {
-    for dm in gdm lightdm lxdm emptty greetd; do
-        sudo rm -f "/etc/dinit.d/boot.d/$dm" 2>/dev/null || true
-        sudo dinitctl disable "$dm" 2>/dev/null || true
-    done
-}
-
-_runit_runsvdir() {
-    if   [ -d /run/runit/service ];          then echo "/run/runit/service"
-    elif [ -d /etc/runit/runsvdir/default ]; then echo "/etc/runit/runsvdir/default"
+# Background rotation status (ON = multi, OFF = single)
+backgrounds_status() {
+    local conf="$THEMES_DIR/$THEME_NAME/Themes/hyprland_animated.conf"
+    if grep -q '^Backgrounds=' "$conf" 2>/dev/null; then
+        echo "ON"
     else
-        error "Cannot find runit service directory"
-        return 1
+        echo "OFF"
     fi
 }
 
-detect_init() {
-    # Pass 1: PID 1 comm (most reliable - no external deps)
-    local pid1_comm
-    pid1_comm=$(cat /proc/1/comm 2>/dev/null || true)
-    case "$pid1_comm" in
-        systemd)    echo "systemd";  return ;;
-        dinit)      echo "dinit";    return ;;
-        runit)      echo "runit";    return ;;
-        openrc-init|openrc) echo "openrc"; return ;;
-    esac
+# Configure background rotation: multi (curated rotation) or single (original behavior)
+configure_backgrounds() {
+    local dst="$THEMES_DIR/$THEME_NAME"
+    [[ ! -d "$dst/Themes" ]] && { error "Install theme first"; return 1; }
 
-    # Pass 2: characteristic binaries / directories
-    command -v dinitctl      &>/dev/null && { echo "dinit";   return; }
-    command -v rc-service    &>/dev/null && { echo "openrc";  return; }
-    { command -v sv &>/dev/null && [ -d /etc/sv ]; } && { echo "runit"; return; }
-    command -v systemctl     &>/dev/null && { echo "systemd"; return; }
-
-    echo "unknown"
+    if confirm "Use multiple rotating backgrounds? (No = single background per theme)"; then
+        sudo sed -i 's|^# Backgrounds=|Backgrounds=|' "$dst"/Themes/*.conf
+        info "Background rotation enabled (multi)"
+    else
+        sudo sed -i 's|^Backgrounds=|# Backgrounds=|' "$dst"/Themes/*.conf
+        info "Single background mode enabled (original behavior)"
+    fi
 }
 
 # Enable SDDM
 enable_sddm() {
-    local init
-    init=$(detect_init)
-    info "Detected init system: $init"
+    command -v systemctl &>/dev/null || { error "systemctl not found"; return 1; }
 
-    case "$init" in
-        systemd)
-            _disable_dm_systemd
-            sudo systemctl enable --now sddm.service
-            ;;
-
-        openrc)
-            _disable_dm_openrc
-            sudo rc-update add sddm default
-            # Start immediately if we are in a live session
-            sudo rc-service sddm start 2>/dev/null || true
-            ;;
-
-        runit)
-            local runsvdir
-            runsvdir=$(_runit_runsvdir)
-
-            if [ ! -d /etc/sv/sddm ]; then
-                error "/etc/sv/sddm not found - is sddm-runit (or equivalent) installed?"
-                return 1
-            fi
-
-            _disable_dm_runit
-            sudo ln -sf /etc/sv/sddm "$runsvdir/sddm"
-            info "sddm symlinked into $runsvdir"
-            ;;
-
-        dinit)
-            if [ ! -f /etc/dinit.d/sddm ]; then
-                error "/etc/dinit.d/sddm not found - is sddm-dinit (or equivalent) installed?"
-                return 1
-            fi
-
-            _disable_dm_dinit
-            # boot.d symlink makes the service start automatically at boot
-            sudo mkdir -p /etc/dinit.d/boot.d
-            sudo ln -sf /etc/dinit.d/sddm /etc/dinit.d/boot.d/sddm
-
-            # Also enable & start in the running session
-            if command -v dinitctl &>/dev/null; then
-                sudo dinitctl enable sddm  2>/dev/null || true
-                sudo dinitctl start  sddm  2>/dev/null || true
-            fi
-            ;;
-
-        # ── Unknown / manual fallback ─────────────────────
-        *)
-            warn "Could not detect init system automatically."
-            warn "Please enable sddm manually:"
-            echo ""
-            echo "  systemd  -  sudo systemctl enable --now sddm"
-            echo "  openrc   -  sudo rc-update add sddm default"
-            echo "  runit    -  sudo ln -s /etc/sv/sddm /run/runit/service/"
-            echo "  dinit    -  sudo ln -s /etc/dinit.d/sddm /etc/dinit.d/boot.d/sddm"
-            return 1
-            ;;
-    esac
-
+    sudo systemctl disable display-manager.service 2>/dev/null || true
+    sudo systemctl enable sddm.service
     info "SDDM enabled"
     warn "Reboot required"
 }
 
 preview_theme(){
     local log_file="/tmp/${THEME_NAME}_$DATE.txt"
-
+    
     sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/sddm-astronaut-theme/ > $log_file 2>&1 &
     greeter_pid=$!
 
@@ -298,7 +215,7 @@ preview_theme(){
 
 
     local theme="$(sed -n 's|^ConfigFile=Themes/\(.*\)\.conf|\1|p' $METADATA)"
-    info "Preview closed ($theme theme found)."
+    info "Preview closed ($theme theme found)." 
     info "Log file: $log_file"
 }
 
@@ -323,16 +240,18 @@ main() {
             "📂 Install Theme" \
             "🔧 Enable SDDM Service" \
             "🎨 Select Theme Variant" \
+            "🖼️ Configure Backgrounds (rotation: $(backgrounds_status))" \
             "✨ Preview the set theme" \
             "❌ Exit")
 
         case "$choice" in
-            "🚀 Complete Installation (recommended)") install_deps && clone_repo && install_theme && select_theme && enable_sddm && info "Everything done!" && exit 0;;
+            "🚀 Complete Installation (recommended)") install_deps && clone_repo && install_theme && configure_backgrounds && select_theme && enable_sddm && info "Everything done!" && exit 0;;
             "📦 Install Dependencies") install_deps ;;
             "📥 Clone Repository") clone_repo ;;
             "📂 Install Theme") install_theme ;;
             "🔧 Enable SDDM Service") enable_sddm ;;
             "🎨 Select Theme Variant") select_theme ;;
+            "🖼️ Configure Backgrounds"*) configure_backgrounds ;;
             "✨ Preview the set theme") preview_theme;;
             "❌ Exit") info "Goodbye!"; exit 0 ;;
         esac
